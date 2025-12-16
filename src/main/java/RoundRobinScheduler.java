@@ -38,22 +38,30 @@ public class RoundRobinScheduler implements Scheduler {
                 if (current != null && !current.isCompleted()) {
                     readyQueue.add(current); // put it back at end
                 }
-                // pick next process
-                Process next = readyQueue.poll();
+                // peek next process
+                Process next = readyQueue.peek();
                 if (next != null) {
                     // apply context switch if this isn't the first ever dispatch or if switching between processes
                     if (result.executionOrder.size() > 0) {
-                        // advance time by context switch and update waiting for all ready processes
-                        time += contextSwitch;
-                        for (Process rp : readyQueue) {
-                            rp.incrementWaiting(contextSwitch);
+                        // Simulate context switch per tick:
+                        // - advance time one by one
+                        // - increment waiting for all ready processes (including the next to run)
+                        // - bring in arrivals that occur during the switch so they can accrue waiting for remaining CS ticks
+                        for (int cs = 0; cs < contextSwitch; cs++) {
+                            time += 1;
+                            for (Process rp : readyQueue) {
+                                rp.incrementWaiting(1);
+                            }
+                            while (idx < processes.size() && processes.get(idx).getArrivalTime() <= time) {
+                                readyQueue.add(processes.get(idx++));
+                            }
                         }
                     }
-                    current = next;
+                    current = readyQueue.poll();
                     sliceRemaining = timeQuantum;
                     if (current.getStartTime() == -1) current.setStartTime(time);
-                    // record dispatch into execution order timeline
-                    result.executionOrder.add(current.getProcessName() + "@" + time);
+                    // record dispatch into execution order timeline (names only for tests)
+                    result.executionOrder.add(current.getProcessName());
                 } else {
                     // No ready process; jump time to next arrival to avoid idle loops
                     if (idx < processes.size()) {
@@ -120,4 +128,3 @@ public class RoundRobinScheduler implements Scheduler {
         return result;
     }
 }
-

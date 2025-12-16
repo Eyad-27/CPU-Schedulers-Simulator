@@ -75,7 +75,12 @@ public class TestExecutor {
                 allResults.addAll(results);
             }
 
-            TestRunner.printTestResults(allResults);
+            // Print detailed results only
+            for (TestRunner.TestResult result : allResults) {
+                TestRunner.printTestResultDetailed(result);
+            }
+            // Then print the summary line at the end
+            printSummary(allResults);
 
         } catch (Exception e) {
             System.err.println("Error running tests: " + e.getMessage());
@@ -118,16 +123,12 @@ public class TestExecutor {
             System.out.println("\nRunning: " + selectedTest.name);
             List<TestRunner.TestResult> results = TestRunner.runAllTests(selectedTest);
 
-            TestRunner.printTestResults(results);
-
-            // Ask to show detailed results
-            System.out.print("\nShow detailed results for each test? (y/n): ");
-            String response = scanner.next();
-            if (response.equalsIgnoreCase("y")) {
-                for (TestRunner.TestResult result : results) {
-                    TestRunner.printTestResultDetailed(result);
-                }
+            // Print detailed results only
+            for (TestRunner.TestResult result : results) {
+                TestRunner.printTestResultDetailed(result);
             }
+            // Then print the summary line at the end
+            printSummary(results);
 
         } catch (Exception e) {
             System.err.println("Error running test: " + e.getMessage());
@@ -157,7 +158,12 @@ public class TestExecutor {
                 allResults.addAll(results);
             }
 
-            TestRunner.printTestResults(allResults);
+            // Print detailed results only
+            for (TestRunner.TestResult result : allResults) {
+                TestRunner.printTestResultDetailed(result);
+            }
+            // Then print the summary line at the end
+            printSummary(allResults);
 
         } catch (Exception e) {
             System.err.println("Error running tests: " + e.getMessage());
@@ -200,16 +206,12 @@ public class TestExecutor {
             System.out.println("\nRunning: " + selectedTest.name);
             List<TestRunner.TestResult> results = TestRunner.runAllTests(selectedTest);
 
-            TestRunner.printTestResults(results);
-
-            // Ask to show detailed results
-            System.out.print("\nShow detailed results for each test? (y/n): ");
-            String response = scanner.next();
-            if (response.equalsIgnoreCase("y")) {
-                for (TestRunner.TestResult result : results) {
-                    TestRunner.printTestResultDetailed(result);
-                }
+            // Print detailed results only
+            for (TestRunner.TestResult result : results) {
+                TestRunner.printTestResultDetailed(result);
             }
+            // Then print the summary line at the end
+            printSummary(results);
 
         } catch (Exception e) {
             System.err.println("Error running test: " + e.getMessage());
@@ -218,30 +220,16 @@ public class TestExecutor {
     }
 
     /**
-     * List all available test cases.
+     * Print a compact summary line at the very end.
      */
-    public static void listAllTestCases() {
-        try {
-            System.out.println("\n" + "=".repeat(80));
-            System.out.println("AVAILABLE TEST CASES");
-            System.out.println("=".repeat(80));
-
-            System.out.println("\nOther Schedulers Tests:");
-            List<TestCaseLoader.TestCase> otherTests = TestCaseLoader.loadTestCasesByCategory("other");
-            for (int i = 0; i < otherTests.size(); i++) {
-                System.out.println("  " + (i + 1) + ") " + otherTests.get(i).name);
-            }
-
-            System.out.println("\nAG Scheduler Tests:");
-            List<TestCaseLoader.TestCase> agTests = TestCaseLoader.loadTestCasesByCategory("ag");
-            for (int i = 0; i < agTests.size(); i++) {
-                System.out.println("  " + (i + 1) + ") " + agTests.get(i).name);
-            }
-
-            System.out.println("=".repeat(80));
-        } catch (Exception e) {
-            System.err.println("Error listing test cases: " + e.getMessage());
+    private static void printSummary(List<TestRunner.TestResult> results) {
+        int passed = 0;
+        int failed = 0;
+        for (TestRunner.TestResult r : results) {
+            if (r.passed) passed++; else failed++;
         }
+        System.out.println("\n" + "=".repeat(80));
+        System.out.printf("Summary: %d Passed, %d Failed (Total: %d)%n", passed, failed, results.size());
+        System.out.println("=".repeat(80));
     }
 }
-

@@ -6,9 +6,46 @@ public class Main {
 
         System.out.println("CPU Schedulers Simulator");
 
-        // Inputs
+        boolean running = true;
+        while (running) {
+            System.out.println("\nSelect Mode:");
+            System.out.println("  1) Automated Test Cases");
+            System.out.println("  2) Manual Input");
+            System.out.println("  3) Exit");
+            int modeChoice = readInt(scanner, "Your choice: ");
+
+            switch (modeChoice) {
+                case 1:
+                    TestExecutor.displayTestMenu(scanner);
+                    break;
+                case 2:
+                    runManualFlow(scanner);
+                    break;
+                case 3:
+                    running = false;
+                    break;
+                default:
+                    System.out.println("Invalid choice.");
+            }
+        }
+
+        scanner.close();
+        System.out.println("Goodbye!");
+    }
+
+    private static int readInt(Scanner scanner, String prompt) {
+        while (true) {
+            System.out.print(prompt);
+            try {
+                return Integer.parseInt(scanner.next());
+            } catch (NumberFormatException e) {
+                System.out.println("Please enter a valid integer.");
+            }
+        }
+    }
+
+    private static void runManualFlow(Scanner scanner) {
         int n = readInt(scanner, "Enter number of processes: ");
-        int rrQuantum = readInt(scanner, "Enter Round Robin Time Quantum: ");
         int contextSwitch = readInt(scanner, "Enter Context Switching delay: ");
 
         Process[] processes = new Process[n];
@@ -22,18 +59,6 @@ public class Main {
             processes[i] = new Process(name, arrival, burst, priority);
         }
 
-        // Menu
-        System.out.println("\nSelect Mode:");
-        System.out.println("  1) Manual Input");
-        System.out.println("  2) Automated Test Cases");
-        int modeChoice = readInt(scanner, "Your choice: ");
-
-        if (modeChoice == 2) {
-            TestExecutor.displayTestMenu(scanner);
-            scanner.close();
-            return;
-        }
-
         System.out.println("\nSelect Scheduler:");
         System.out.println("  1) Round Robin");
         System.out.println("  2) SJF (Preemptive) - stub");
@@ -43,10 +68,12 @@ public class Main {
 
         ScheduleResult result = null;
         switch (choice) {
-            case 1:
+            case 1: {
+                int rrQuantum = readInt(scanner, "Enter Round Robin Time Quantum: ");
                 Scheduler rr = new RoundRobinScheduler(rrQuantum);
                 result = rr.schedule(processes, contextSwitch);
                 break;
+            }
             case 2:
                 System.out.println("SJF Scheduler is not implemented yet (assigned to Mohamed Tarek).");
                 break;
@@ -62,19 +89,6 @@ public class Main {
 
         if (result != null) {
             printResult(result);
-        }
-
-        scanner.close();
-    }
-
-    private static int readInt(Scanner scanner, String prompt) {
-        while (true) {
-            System.out.print(prompt);
-            try {
-                return Integer.parseInt(scanner.next());
-            } catch (NumberFormatException e) {
-                System.out.println("Please enter a valid integer.");
-            }
         }
     }
 
