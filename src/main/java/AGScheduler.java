@@ -7,12 +7,15 @@
 
 public class AGScheduler implements Scheduler {
 
-    public AGScheduler() {}
+    public AGScheduler() {
+
+    }
 
     @Override
     public ScheduleResult schedule(Process[] processes, int contextSwitch) {
         // TODO: Implement AG scheduling logic building on FCFS -> Priority -> SJF phases
         // TODO: Keep per-process quantum updated and maintain an execution history output
+
         return new ScheduleResult();
     }
 }
