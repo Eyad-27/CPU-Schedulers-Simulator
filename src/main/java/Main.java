@@ -74,9 +74,11 @@ public class Main {
                 result = rr.schedule(processes, contextSwitch);
                 break;
             }
-            case 2:
-                System.out.println("SJF Scheduler is not implemented yet (assigned to Mohamed Tarek).");
+            case 2: {
+                Scheduler sjf = new SJFScheduler();
+                result = sjf.schedule(processes, contextSwitch);
                 break;
+            }
             case 3: {
                 Scheduler ps = new PriorityScheduler();
                 result = ps.schedule(processes, contextSwitch);
