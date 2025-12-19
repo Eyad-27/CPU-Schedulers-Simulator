@@ -38,16 +38,16 @@
         "averageTurnaroundTime": 22.4
       },
       "Priority": {
-        "executionOrder": ["P1","P2","P4","P3","P4","P3","P1","P4","P5","P3","P4","P5","P1"],
+        "executionOrder": ["P1", "P2", "P4", "P3", "P4", "P1", "P5", "P1"],
         "processResults": [
-          {"name": "P1", "waitingTime": 29, "turnaroundTime": 39},
+          {"name": "P1", "waitingTime": 24, "turnaroundTime": 34},
           {"name": "P2", "waitingTime": 1, "turnaroundTime": 6},
-          {"name": "P3", "waitingTime": 18, "turnaroundTime": 21},
-          {"name": "P4", "waitingTime": 14, "turnaroundTime": 21},
-          {"name": "P5", "waitingTime": 19, "turnaroundTime": 21}
+          {"name": "P3", "waitingTime": 9, "turnaroundTime": 12},
+          {"name": "P4", "waitingTime": 6, "turnaroundTime": 13},
+          {"name": "P5", "waitingTime": 13, "turnaroundTime": 15}
         ],
-        "averageWaitingTime": 16.2,
-        "averageTurnaroundTime": 21.6
+        "averageWaitingTime": 10.6,
+        "averageTurnaroundTime": 16.0
       }
     }
   }
