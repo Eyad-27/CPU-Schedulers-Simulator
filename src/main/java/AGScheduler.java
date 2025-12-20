@@ -202,7 +202,7 @@ public class AGScheduler implements Scheduler {
         }
         return minIdx;
     }
-
+//
     private void completeProcess(Process currProcess, List<Process> q, int time) {
         currProcess.setRemainingTime(0);
         currProcess.setQuantum(0);
