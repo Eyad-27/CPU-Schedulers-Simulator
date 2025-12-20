@@ -1,3 +1,5 @@
+import java.util.*;
+
 public interface Scheduler {
     /**
      * Execute scheduling on the provided processes.
@@ -16,6 +18,7 @@ class ScheduleResult {
     public java.util.List<String> executionOrder = new java.util.ArrayList<>();
     public java.util.Map<String, Integer> waitingTimes = new java.util.HashMap<>();
     public java.util.Map<String, Integer> turnaroundTimes = new java.util.HashMap<>();
+    public java.util.Map<String, List<Integer>> quantumHistory = new java.util.HashMap<>();
     public double averageWaiting;
     public double averageTurnaround;
 
