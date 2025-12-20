@@ -83,7 +83,8 @@ public class Main {
                 break;
             }
             case 4:
-                System.out.println("AG Scheduler is not implemented yet (assigned to Yassin and Pedro).");
+                Scheduler ag = new AGScheduler();
+                result = ag.schedule(processes, contextSwitch);
                 break;
             default:
                 System.out.println("Invalid choice.");

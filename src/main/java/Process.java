@@ -1,3 +1,5 @@
+import java.util.*;
+
 public class Process {
     private String processName;
     private int arrivalTime;
@@ -5,6 +7,7 @@ public class Process {
     private int priority;
     // Quantum field used for AG scheduler variants
     private int quantum;
+    private List<Integer> quantumHistory;
 
     // Runtime state
     private int remainingTime;
@@ -24,6 +27,8 @@ public class Process {
         this.quantum = quantum;
         this.remainingTime = burstTime;
         this.waitingTime = 0;
+        this.quantumHistory = new ArrayList<>();
+        this.quantumHistory.add(this.quantum);
     }
 
     // Getters and setters
@@ -45,8 +50,18 @@ public class Process {
     public int getPriority() { return priority; }
     public void setPriority(int priority) { this.priority = priority; }
 
+    public List<Integer> getQuantumHistory() {
+        return quantumHistory;
+    }
+    public void setQuantumHistory(List<Integer> quantumHistory) {
+        this.quantumHistory = quantumHistory;
+    }
+
     public int getQuantum() { return quantum; }
-    public void setQuantum(int quantum) { this.quantum = quantum; }
+    public void setQuantum(int quantum) {
+        this.quantum = quantum;
+        this.quantumHistory.add(quantum);
+    }
 
     public int getRemainingTime() { return remainingTime; }
     public void setRemainingTime(int remainingTime) { this.remainingTime = remainingTime; }
