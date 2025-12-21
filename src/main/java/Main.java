@@ -87,7 +87,7 @@ public class Main {
             }
             case 4:
                 Scheduler ag = new AGScheduler();
-                result = ag.schedule(processes, 0);
+                result = ag.schedule(processes, 1);
                 break;
             default:
                 System.out.println("Invalid choice.");

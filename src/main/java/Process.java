@@ -101,5 +101,9 @@ public class Process {
     public String toString() {
         return String.format("%s(arr=%d, burst=%d, prio=%d)", processName, arrivalTime, burstTime, priority);
     }
+
+    public void addToQuantumHistory(int quantum) {
+        this.quantumHistory.add(quantum);
+    }
 }
 
