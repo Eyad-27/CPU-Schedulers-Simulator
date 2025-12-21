@@ -151,10 +151,9 @@ public class TestRunner {
                         scheduler = new SJFScheduler();
                         break;
                     case "Priority":
-                        scheduler = new PriorityScheduler();
+                        scheduler = new PriorityScheduler(testCase.agingInterval);
                         break;
                     case "AG":
-                        // Note: AGScheduler would need to be passed agingInterval or similar
                         scheduler = new AGScheduler();
                         break;
                     default:

@@ -80,7 +80,8 @@ public class Main {
                 break;
             }
             case 3: {
-                Scheduler ps = new PriorityScheduler();
+                int agingInterval = readInt(scanner, "Enter Aging Interval: ");
+                Scheduler ps = new PriorityScheduler(agingInterval);
                 result = ps.schedule(processes, contextSwitch);
                 break;
             }

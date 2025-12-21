@@ -71,9 +71,9 @@ public class RoundRobinScheduler implements Scheduler {
                         while (idx < processes.size() && processes.get(idx).getArrivalTime() <= time) {
                             readyQueue.add(processes.get(idx++));
                         }
-                        continue; // try to select again
+                        continue;
                     } else {
-                        break; // everything done
+                        break;
                     }
                 }
             }
