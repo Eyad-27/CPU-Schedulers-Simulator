@@ -8,6 +8,7 @@ public class Process {
     // Quantum field used for AG scheduler variants
     private int quantum;
     private List<Integer> quantumHistory;
+    private boolean hasArrived;
 
     // Runtime state
     private int remainingTime;
@@ -29,6 +30,7 @@ public class Process {
         this.waitingTime = 0;
         this.quantumHistory = new ArrayList<>();
         this.quantumHistory.add(this.quantum);
+        this.hasArrived = false;
     }
 
     // Getters and setters
@@ -63,6 +65,8 @@ public class Process {
         this.quantumHistory.add(quantum);
     }
 
+    public boolean getArriveState() { return hasArrived; }
+    public boolean setArriveState(boolean state) { return hasArrived = state; }
     public int getRemainingTime() { return remainingTime; }
     public void setRemainingTime(int remainingTime) { this.remainingTime = remainingTime; }
 

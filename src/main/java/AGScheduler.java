@@ -163,8 +163,9 @@ public class AGScheduler implements Scheduler {
         for (Process p : all) {
             if (p.getArrivalTime() == time && !p.isCompleted()) {
                 // Only add if not already in ready queue and not currently running
-                if (!ready.contains(p)) {
+                if (!ready.contains(p) && p.getArriveState() == false) {
                     ready.addLast(p);
+                    p.setArriveState(true);
                 }
             }
         }
