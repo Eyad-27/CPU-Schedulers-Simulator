@@ -21,6 +21,7 @@ public class AGScheduler implements Scheduler {
         ScheduleResult result = new ScheduleResult();
         List<Process> processList = new ArrayList<>();
         List<Process> readyQueue = new ArrayList<>();
+        int left = processes.length;
 
         for(Process p : processes) {
             processList.add(new Process(p.getProcessName(), p.getArrivalTime(), p.getBurstTime(), p.getPriority(), p.getQuantum()));
@@ -31,8 +32,8 @@ public class AGScheduler implements Scheduler {
 
         while(!finished(processList)) {
 
-            addArrivals(processList, readyQueue, currTime);
-            if(readyQueue.isEmpty()) {
+            left -= addArrivals(processList, readyQueue, currTime);
+            if(readyQueue.isEmpty() && left != 0) {
                 currTime++;
                 continue;
             }
@@ -48,7 +49,7 @@ public class AGScheduler implements Scheduler {
             for (int i = 0; i < fcfs; i++) {
                 if (currProcess.getRemainingTime() != 0) currTime++;
                 currProcess.consumeCpu(1);
-                addArrivals(processList, readyQueue, currTime);
+                left -= addArrivals(processList, readyQueue, currTime);
             }
 
             if (currProcess.getRemainingTime() == 0) {
@@ -87,7 +88,7 @@ public class AGScheduler implements Scheduler {
             for (int i = 0; i < priorityQuantum; i++) {
                 if (currProcess.getRemainingTime() != 0) currTime++;
                 currProcess.consumeCpu(1);
-                addArrivals(processList, readyQueue, currTime);
+                left -= addArrivals(processList, readyQueue, currTime);
             }
             if (currProcess.getRemainingTime() == 0) {
                 completeProcess(currProcess, readyQueue, currTime);
@@ -128,7 +129,7 @@ public class AGScheduler implements Scheduler {
             for (int i = 0; i < sjf; i++) {
                 if (currProcess.getRemainingTime() != 0) currTime++;
                 currProcess.consumeCpu(1);
-                addArrivals(processList, readyQueue, currTime);
+                left -= addArrivals(processList, readyQueue, currTime);
             }
             if (currProcess.getRemainingTime() == 0) {
                 completeProcess(currProcess, readyQueue, currTime);
@@ -155,13 +156,33 @@ public class AGScheduler implements Scheduler {
         }
 
         /* ===== FINAL STATS ===== */
+//        double tw = 0, tt = 0;
+//        for (Process p : processList) {
+//            int tat = p.getCompletionTime() - p.getArrivalTime();
+//            int wt = tat - p.getBurstTime();
+//            result.waitingTimes.put(p.getProcessName(), wt);
+//            result.turnaroundTimes.put(p.getProcessName(), tat);
+//            result.quantumHistory.put(p.getProcessName(), p.getQuantumHistory());
+//            tw += wt;
+//            tt += tat;
+//        }
+//
+//        result.averageWaiting = tw / processList.size();
+//        result.averageTurnaround = tt / processList.size();
+
         double tw = 0, tt = 0;
         for (Process p : processList) {
-            int tat = p.getCompletionTime() - p.getArrivalTime();
-            int wt = tat - p.getBurstTime();
+            int finish = p.getCompletionTime();
+            int arrival = p.getArrivalTime();
+            int burst = p.getBurstTime();
+
+            int tat = finish - arrival;
+            int wt = tat - burst;
+
             result.waitingTimes.put(p.getProcessName(), wt);
             result.turnaroundTimes.put(p.getProcessName(), tat);
             result.quantumHistory.put(p.getProcessName(), p.getQuantumHistory());
+
             tw += wt;
             tt += tat;
         }
@@ -169,8 +190,11 @@ public class AGScheduler implements Scheduler {
         result.averageWaiting = tw / processList.size();
         result.averageTurnaround = tt / processList.size();
 
+
         return result;
     }
+
+
 
     private boolean finished(List<Process> all) {
         for (Process p : all)
@@ -178,10 +202,14 @@ public class AGScheduler implements Scheduler {
                 return false;
         return true;
     }
-    private void addArrivals(List<Process> all, List<Process> readyQueue, int time) {
+    private int addArrivals(List<Process> all, List<Process> readyQueue, int time) {
+        int count = 0;
         for (Process p : all)
-            if (p.getArrivalTime() == time && !readyQueue.contains(p) && !p.isCompleted())
-                readyQueue.add(0, p);
+            if (p.getArrivalTime() == time && !readyQueue.contains(p) && !p.isCompleted()) {
+                readyQueue.add(p);
+                count++;
+            }
+        return count;
     }
 
     private int getHighestPriority(Process cur, List<Process> q) {
@@ -191,7 +219,7 @@ public class AGScheduler implements Scheduler {
 //        }
         int minIdx = -1;
         for (int i = 0; i < q.size(); i++) {
-            if(q.get(i).getPriority() <= min) {
+            if(q.get(i).getPriority() < min) {
                 min = q.get(i).getPriority();
                 minIdx = i;
             }
@@ -206,7 +234,7 @@ public class AGScheduler implements Scheduler {
 //            min = Integer.MAX_VALUE;
 //        }
         for (int i = 0; i < q.size(); i++) {
-            if(q.get(i).getRemainingTime() <= min) {
+            if(q.get(i).getRemainingTime() < min) {
                 min = q.get(i).getRemainingTime();
                 minIdx = i;
             }
