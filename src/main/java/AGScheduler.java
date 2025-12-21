@@ -39,29 +39,23 @@ public class AGScheduler implements Scheduler {
 
 
             // =================== FCFS ===================
-            Process next = readyQueue.get(0);
-            if (currProcess == null || currProcess != next) {
-                result.executionOrder.add(next.getProcessName());
+            if (currProcess == null) {
+                currProcess = readyQueue.remove(0);
+                result.executionOrder.add(currProcess.getProcessName());
             }
 
-
-            currProcess = readyQueue.remove(0);
             int fcfs = (int) Math.ceil(currProcess.getQuantum() * 0.25);
             for (int i = 0; i < fcfs; i++) {
+                if (currProcess.getRemainingTime() != 0) currTime++;
                 currProcess.consumeCpu(1);
-                currTime++;
                 addArrivals(processList, readyQueue, currTime);
             }
 
-            if (currProcess.getRemainingTime() != 0) {
-                readyQueue.add(currProcess);
-            }
-            // Scenario 4
-            else {
+            if (currProcess.getRemainingTime() == 0) {
                 completeProcess(currProcess, readyQueue, currTime);
+                currProcess = null;
+                continue;
             }
-
-
 
 
             // =================== Priority ===================
@@ -74,27 +68,31 @@ public class AGScheduler implements Scheduler {
 
             int Q = currProcess.getQuantum();
             // Scenario 1
-            next = readyQueue.get(highPriority);
+            Process next;
+            if (highPriority > -1)
+                next = readyQueue.get(highPriority);
+            else {
+                next = currProcess;
+            }
             if (currProcess.getRemainingTime() != 0 &&  next != currProcess) {
                 int newQuantum = currProcess.getQuantum() + 2;
                 currProcess.setQuantum(newQuantum);
-
-                result.executionOrder.add(next.getProcessName());
+                readyQueue.add(currProcess);
+                currProcess = readyQueue.remove(highPriority);
+                result.executionOrder.add(currProcess.getProcessName());
+                continue;
             }
 
-            currProcess = readyQueue.remove(highPriority);
             int priorityQuantum = (int) Math.ceil(currProcess.getQuantum() * 0.25);
-            for (int i = 0; i< priorityQuantum; i++) {
+            for (int i = 0; i < priorityQuantum; i++) {
+                if (currProcess.getRemainingTime() != 0) currTime++;
                 currProcess.consumeCpu(1);
-                currTime++;
                 addArrivals(processList, readyQueue, currTime);
             }
-            if (currProcess.getRemainingTime() != 0) {
-                readyQueue.add(currProcess);
-            }
-            // Scenario 4
-            else {
+            if (currProcess.getRemainingTime() == 0) {
                 completeProcess(currProcess, readyQueue, currTime);
+                currProcess = null;
+                continue;
             }
 
 
@@ -104,43 +102,56 @@ public class AGScheduler implements Scheduler {
                 // nothing available for priority phase; continue main loop
                 continue;
             }
+            int shortest = getShortestJob(currProcess, readyQueue);
 
+            if (shortest > -1) {
+                next = readyQueue.get(shortest);
+            }
+            else {
+                next = currProcess;
+            }
 
-            int sjfToRemove = getShortestJob(currProcess, readyQueue);
-            next = readyQueue.get(sjfToRemove);
             // Scenario 2
             if (currProcess.getRemainingTime() != 0 && next != currProcess) {
                 int consumedQuantum = (int) Math.ceil((double) (currProcess.getQuantum() - priorityQuantum) /2);
                 int newQuantum = currProcess.getQuantum() + consumedQuantum;
                 currProcess.setQuantum(newQuantum);
-
-                result.executionOrder.add(next.getProcessName());
-            }
-            // Scenario 4
-            else {
-                completeProcess(currProcess, readyQueue, currTime);
+                readyQueue.add(currProcess);
+                currProcess = readyQueue.remove(shortest);
+                result.executionOrder.add(currProcess.getProcessName());
+                continue;
             }
 
 
-            currProcess = readyQueue.remove(sjfToRemove);
 
             int sjf = Q - fcfs - priorityQuantum; // 50%
             for (int i = 0; i < sjf; i++) {
+                if (currProcess.getRemainingTime() != 0) currTime++;
                 currProcess.consumeCpu(1);
-                currTime++;
                 addArrivals(processList, readyQueue, currTime);
             }
-            // Scenario 3
-            if (currProcess.getRemainingTime() != 0) {
-                int newQuantum = sjf + currProcess.getQuantum();
-                currProcess.setQuantum(newQuantum);
-
-                readyQueue.add(currProcess);
-            }
-            // Scenario 4
-            else {
+            if (currProcess.getRemainingTime() == 0) {
                 completeProcess(currProcess, readyQueue, currTime);
+                currProcess = null;
+                continue;
             }
+
+
+            if (readyQueue.isEmpty()) {
+                // nothing available for priority phase; continue main loop
+                continue;
+            }
+
+            next = readyQueue.get(0);
+            if (currProcess.getRemainingTime() != 0 && next != currProcess) {
+                int consumedQuantum = currProcess.getQuantum() - priorityQuantum - sjf;
+                int newQuantum = currProcess.getQuantum() + consumedQuantum;
+                currProcess.setQuantum(newQuantum);
+                readyQueue.add(currProcess);
+                currProcess = readyQueue.remove(0);
+                result.executionOrder.add(currProcess.getProcessName());
+            }
+
         }
 
         /* ===== FINAL STATS ===== */
@@ -175,9 +186,9 @@ public class AGScheduler implements Scheduler {
 
     private int getHighestPriority(Process cur, List<Process> q) {
         int min = cur.getPriority();
-        if (cur.getRemainingTime() == 0) {
-            min = Integer.MAX_VALUE;
-        }
+//        if (cur.getRemainingTime() == 0) {
+//            min = Integer.MAX_VALUE;
+//        }
         int minIdx = -1;
         for (int i = 0; i < q.size(); i++) {
             if(q.get(i).getPriority() <= min) {
@@ -191,9 +202,9 @@ public class AGScheduler implements Scheduler {
     private int getShortestJob(Process cur, List<Process> q) {
         int min = cur.getRemainingTime();
         int minIdx = -1;
-        if (min == 0) {
-            min = Integer.MAX_VALUE;
-        }
+//        if (min == 0) {
+//            min = Integer.MAX_VALUE;
+//        }
         for (int i = 0; i < q.size(); i++) {
             if(q.get(i).getRemainingTime() <= min) {
                 min = q.get(i).getRemainingTime();
@@ -208,7 +219,7 @@ public class AGScheduler implements Scheduler {
         currProcess.setQuantum(0);
         currProcess.setCompletionTime(time);
         // remove from ready queue if present to avoid future accesses
-//        if (q != null) q.remove(currProcess);
+        if (q != null) q.remove(currProcess);
     }
 }
 
