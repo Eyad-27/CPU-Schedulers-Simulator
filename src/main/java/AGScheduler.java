@@ -77,7 +77,8 @@ public class AGScheduler implements Scheduler {
                 next = currProcess;
             }
             if (currProcess.getRemainingTime() != 0 &&  next != currProcess) {
-                int newQuantum = currProcess.getQuantum() + 2;
+                int consumedQuantum = (int) Math.ceil((double) (currProcess.getQuantum() - fcfs) * 0.5);
+                int newQuantum = currProcess.getQuantum() + consumedQuantum;
                 currProcess.setQuantum(newQuantum);
                 readyQueue.add(currProcess);
                 currProcess = readyQueue.remove(highPriority);
@@ -115,7 +116,7 @@ public class AGScheduler implements Scheduler {
 
             // Scenario 2
             if (currProcess.getRemainingTime() != 0 && next != currProcess) {
-                int consumedQuantum = (int) Math.ceil((double) (currProcess.getQuantum() - priorityQuantum) /2);
+                int consumedQuantum = (int) Math.ceil((double) (currProcess.getQuantum() - fcfs - priorityQuantum));
                 int newQuantum = currProcess.getQuantum() + consumedQuantum;
                 currProcess.setQuantum(newQuantum);
                 readyQueue.add(currProcess);
@@ -146,8 +147,8 @@ public class AGScheduler implements Scheduler {
 
             next = readyQueue.get(0);
             if (currProcess.getRemainingTime() != 0 && next != currProcess) {
-                int consumedQuantum = currProcess.getQuantum() - priorityQuantum - sjf;
-                int newQuantum = currProcess.getQuantum() + consumedQuantum;
+//                int consumedQuantum = currProcess.getQuantum() - priorityQuantum - sjf;
+                int newQuantum = currProcess.getQuantum() + 2;
                 currProcess.setQuantum(newQuantum);
                 readyQueue.add(currProcess);
                 int firstArrived = getFirstArrived(currProcess, readyQueue);
@@ -255,7 +256,7 @@ public class AGScheduler implements Scheduler {
         }
         return minIdx;
     }
-//
+    //
     private void completeProcess(Process currProcess, List<Process> q, int time) {
         currProcess.setRemainingTime(0);
         currProcess.setQuantum(0);
