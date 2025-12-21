@@ -79,6 +79,7 @@ public class AGScheduler implements Scheduler {
             if (currProcess.getRemainingTime() != 0 &&  next != currProcess) {
                 int consumedQuantum = (int) Math.ceil((double) (currProcess.getQuantum() - fcfs) * 0.5);
                 int newQuantum = currProcess.getQuantum() + consumedQuantum;
+//                if (consumedQuantum > newQuantum) {}
                 currProcess.setQuantum(newQuantum);
                 readyQueue.add(currProcess);
                 currProcess = readyQueue.remove(highPriority);
@@ -216,15 +217,15 @@ public class AGScheduler implements Scheduler {
     }
 
     private int getFirstArrived(Process cur, List <Process> q) {
-        int min = Integer.MAX_VALUE;
-        int minIdx = -1;
-        for (int i = 0; i < q.size(); i++) {
-            if(q.get(i).getArrivalTime() < min) {
-                min = q.get(i).getArrivalTime();
-                minIdx = i;
-            }
-        }
-        return minIdx;
+//        int min = Integer.MAX_VALUE;
+//        int minIdx = -1;
+//        for (int i = 0; i < q.size(); i++) {
+//            if(q.get(i).getArrivalTime() < min) {
+//                min = q.get(i).getArrivalTime();
+//                minIdx = i;
+//            }
+//        }
+        return 0;
     }
 
     private int getHighestPriority(Process cur, List<Process> q) {
