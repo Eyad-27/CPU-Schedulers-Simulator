@@ -1,167 +1,187 @@
 import java.util.*;
 
 public class PriorityScheduler implements Scheduler {
+    private final int agingInterval;
 
-    private int agingInterval = 5; 
-
-    public void setAgingInterval(int interval) {
-        this.agingInterval = interval;
-    }
-
-    private static class ProcessState {
-        Process p;
-        int currentPriority;
-        int ageTimer = 0;
-        int remainingBurst;
-
-        ProcessState(Process p) {
-            this.p = p;
-            this.currentPriority = p.getPriority();
-            this.remainingBurst = p.getBurstTime();
-        }
+    public PriorityScheduler(int agingInterval) {
+        this.agingInterval = agingInterval;
     }
 
     @Override
-    public ScheduleResult schedule(Process[] processes, int contextSwitch) {
-        ScheduleResult result = new ScheduleResult();
-        int n = processes.length;
-        if (n == 0) return result;
+    public ScheduleResult schedule(Process[] inputProcesses, int contextSwitch) {
+        // Create defensive copies of processes
+        List<Process> processes = new ArrayList<>();
+        Map<String, Integer> lastAgingTime = new HashMap<>();
 
-        int completed = 0;
-        int currentTime = 0;
-        String lastProcessName = null;
-
-        List<ProcessState> allStates = new ArrayList<>();
-        for (Process p : processes) {
-            allStates.add(new ProcessState(p));
+        for (Process p : inputProcesses) {
+            Process copy = new Process(p.getProcessName(), p.getArrivalTime(),
+                    p.getBurstTime(), p.getPriority(), p.getQuantum());
+            processes.add(copy);
+            lastAgingTime.put(copy.getProcessName(), copy.getArrivalTime());
         }
 
-        ProcessState current = null;
+        ScheduleResult result = new ScheduleResult();
 
-        while (completed < n) {
-            // 1. Find the best process currently available in the ready pool
-            ProcessState best = findBestProcess(allStates, currentTime);
+        int time = 0;
+        int finished = 0;
+        Process current = null;
 
-            if (best != null) {
-                // Preemption/Selection Logic:
-                // Switch if: 1. CPU is idle, OR 2. Best is different from current AND strictly better
-                if (current == null || (best != current && isBetter(best, current))) {
-                    
-                    // Trigger Context Switch if switching to a DIFFERENT process
-                    if (lastProcessName != null && !best.p.getProcessName().equals(lastProcessName)) {
-                        for (int i = 0; i < contextSwitch; i++) {
-                            currentTime++;
-                            // Everyone waiting ages during context switch
-                            applyAging(allStates, null, currentTime);
-                            // Important: Re-check best after aging tick
-                            best = findBestProcess(allStates, currentTime);
+        // sort by arrival to make arrivals predictable
+        processes.sort(Comparator.comparingInt(Process::getArrivalTime));
+
+        // helper comparator: lower numeric priority means higher priority
+        Comparator<Process> prioCmp = Comparator
+                .comparingInt((Process p) -> p.getPriority())
+                .thenComparingInt(Process::getArrivalTime)
+                .thenComparing(Process::getProcessName);
+
+        // previous running process name to record executionOrder only on switches
+        String prevRunning = null;
+
+        while (finished < processes.size()) {
+
+            // apply aging for waiting processes
+            for (Process p : processes) {
+                if (p.getRemainingTime() > 0 && p.getArrivalTime() <= time) {
+                    int lastAge = lastAgingTime.get(p.getProcessName());
+                    while (agingInterval > 0 && (time - lastAge) >= agingInterval) {
+                        if (p.getPriority() > 1) {
+                            p.setPriority(p.getPriority() - 1);
+                        }
+                        lastAge += agingInterval;
+                        lastAgingTime.put(p.getProcessName(), lastAge);
+                    }
+                }
+            }
+
+            // build ready list
+            List<Process> ready = new ArrayList<>();
+            for (Process p : processes) {
+                if (p.getArrivalTime() <= time && p.getRemainingTime() > 0) {
+                    ready.add(p);
+                }
+            }
+
+            if (ready.isEmpty()) {
+                time++;
+                continue;
+            }
+
+            // pick highest priority (lowest numeric)
+            ready.sort(prioCmp);
+            Process next = ready.get(0);
+
+            // if switching, account for context switch time (simulate aging during it)
+            if (current != null && !current.getProcessName().equals(next.getProcessName())) {
+
+                // Record the process we INTEND to switch to
+                if (prevRunning == null || !prevRunning.equals(next.getProcessName())) {
+                    result.executionOrder.add(next.getProcessName());
+                    prevRunning = next.getProcessName();
+                }
+
+                for (int i = 0; i < contextSwitch; i++) {
+                    time++;
+                    // aging during context switch - all waiting processes can age
+                    for (Process p : processes) {
+                        if (p.getRemainingTime() > 0 && p.getArrivalTime() <= time
+                                && !p.getProcessName().equals(next.getProcessName())) {
+                            int lastAge = lastAgingTime.get(p.getProcessName());
+                            while (agingInterval > 0 && (time - lastAge) >= agingInterval) {
+                                if (p.getPriority() > 1) {
+                                    p.setPriority(p.getPriority() - 1);
+                                }
+                                lastAge += agingInterval;
+                                lastAgingTime.put(p.getProcessName(), lastAge);
+                            }
                         }
                     }
+                }
 
-                    current = best;
-                    // Reset age timer only when it actually starts/resumes on CPU
-                    current.ageTimer = 0; 
-
-                    if (result.executionOrder.isEmpty() || 
-                        !result.executionOrder.get(result.executionOrder.size() - 1).equals(current.p.getProcessName())) {
-                        result.executionOrder.add(current.p.getProcessName());
+                // re-evaluate after context switch - if priority changed, do another CS
+                ready.clear();
+                for (Process p : processes) {
+                    if (p.getArrivalTime() <= time && p.getRemainingTime() > 0) {
+                        ready.add(p);
                     }
                 }
-            }
+                if (!ready.isEmpty()) {
+                    ready.sort(prioCmp);
+                    Process reevaluated = ready.get(0);
 
-            // 2. Execution Tick
-            if (current != null) {
-                if (current.p.getStartTime() == -1) {
-                    current.p.setStartTime(currentTime);
-                }
+                    // If the highest priority changed during CS, need ANOTHER context switch
+                    if (!reevaluated.getProcessName().equals(next.getProcessName())) {
 
-                current.remainingBurst--;
-                currentTime++;
+                        // Record the NEW process we're switching to
+                        if (!prevRunning.equals(reevaluated.getProcessName())) {
+                            result.executionOrder.add(reevaluated.getProcessName());
+                            prevRunning = reevaluated.getProcessName();
+                        }
 
-                // Age everyone except the one currently running
-                applyAging(allStates, current, currentTime);
-
-                if (current.remainingBurst <= 0) {
-                    current.p.setCompletionTime(currentTime);
-                    completed++;
-                    lastProcessName = current.p.getProcessName();
-                    // Mark as completed in the Process object logic if it has such a method
-                    // In this context, we'll rely on remainingBurst for findBestProcess
-                    current = null; 
-                } else {
-                    lastProcessName = current.p.getProcessName();
+                        for (int i = 0; i < contextSwitch; i++) {
+                            time++;
+                            // aging during the second context switch
+                            for (Process p : processes) {
+                                if (p.getRemainingTime() > 0 && p.getArrivalTime() <= time
+                                        && !p.getProcessName().equals(reevaluated.getProcessName())) {
+                                    int lastAge = lastAgingTime.get(p.getProcessName());
+                                    while (agingInterval > 0 && (time - lastAge) >= agingInterval) {
+                                        if (p.getPriority() > 1) {
+                                            p.setPriority(p.getPriority() - 1);
+                                        }
+                                        lastAge += agingInterval;
+                                        lastAgingTime.put(p.getProcessName(), lastAge);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    next = reevaluated;
                 }
             } else {
-                // CPU Idle
-                currentTime++;
-                applyAging(allStates, null, currentTime);
-            }
-        }
-
-        return finalizeMetrics(processes, result);
-    }
-
-    private ProcessState findBestProcess(List<ProcessState> states, int time) {
-        ProcessState best = null;
-        for (ProcessState ps : states) {
-            if (ps.p.getArrivalTime() <= time && ps.remainingBurst > 0) {
-                if (best == null || isBetter(ps, best)) {
-                    best = ps;
+                // Not switching - record if needed
+                if (prevRunning == null || !prevRunning.equals(next.getProcessName())) {
+                    result.executionOrder.add(next.getProcessName());
+                    prevRunning = next.getProcessName();
                 }
             }
-        }
-        return best;
-    }
 
-    /**
-     * Comparison logic to match Priority test cases:
-     * 1. Lower Priority Value is better.
-     * 2. Tie-breaker: Earlier Arrival Time is better.
-     * 3. Second Tie-breaker: Original Priority (if needed).
-     */
-    private boolean isBetter(ProcessState a, ProcessState b) {
-        if (a.currentPriority != b.currentPriority) {
-            return a.currentPriority < b.currentPriority;
-        }
-        if (a.p.getArrivalTime() != b.p.getArrivalTime()) {
-            return a.p.getArrivalTime() < b.p.getArrivalTime();
-        }
-        return a.p.getPriority() < b.p.getPriority();
-    }
+            // run one time unit (preemptive, so check each tick)
+            current = next;
+            if (current.getStartTime() == -1) {
+                current.setStartTime(time);
+            }
+            current.setRemainingTime(current.getRemainingTime() - 1);
+            // mark that it was just run (reset its last aging time)
+            lastAgingTime.put(current.getProcessName(), time + 1);
+            time++;
 
-    private void applyAging(List<ProcessState> states, ProcessState runningNow, int time) {
-        for (ProcessState ps : states) {
-            // A process ages if it has arrived, is not finished, and is NOT on the CPU
-            if (ps.p.getArrivalTime() < time && ps.remainingBurst > 0 && ps != runningNow) {
-                ps.ageTimer++;
-                if (ps.ageTimer >= agingInterval) {
-                    // Priority improves (decreases) by 1, floor at 1
-                    ps.currentPriority = Math.max(1, ps.currentPriority - 1);
-                    ps.ageTimer = 0;
-                }
+            if (current.getRemainingTime() == 0) {
+                current.setCompletionTime(time);
+                finished++;
+                // reset prevRunning so next scheduling records new start
+                prevRunning = null;
             }
         }
-    }
 
-    private ScheduleResult finalizeMetrics(Process[] processes, ScheduleResult result) {
-        double totalWT = 0, totalTAT = 0;
-        int n = processes.length;
+        // calculate times
+        double totalWT = 0;
+        double totalTAT = 0;
 
         for (Process p : processes) {
             int tat = p.getCompletionTime() - p.getArrivalTime();
             int wt = tat - p.getBurstTime();
 
-            // Store results in maps (adjusting for ScheduleResult structure)
-            result.waitingTimes.put(p.getProcessName(), wt);
             result.turnaroundTimes.put(p.getProcessName(), tat);
+            result.waitingTimes.put(p.getProcessName(), wt);
 
             totalWT += wt;
             totalTAT += tat;
         }
 
-        // Rounded to match JSON expected outputs if necessary
-        result.averageWaiting = n == 0 ? 0 : Math.round((totalWT / n) * 100.0) / 100.0;
-        result.averageTurnaround = n == 0 ? 0 : Math.round((totalTAT / n) * 100.0) / 100.0;
+        result.averageWaiting = totalWT / processes.size();
+        result.averageTurnaround = totalTAT / processes.size();
+
         return result;
     }
 }
